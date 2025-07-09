@@ -121,7 +121,7 @@ public:
 		} while (InterlockedCompareExchange64((__int64*)&_head,(__int64)newhead,(__int64)oldhead)!=(__int64)oldhead);
 		unsigned long qsize=InterlockedDecrement(&_size);
 
-		//_nodepool.Free(realadr);
+		_nodepool.Free(realadr);
 		unsigned long long index = InterlockedIncrement(&logindex);
 		index %= MAX;
 		logbox[index].id = GetCurrentThreadId();
