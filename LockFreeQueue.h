@@ -94,24 +94,28 @@ public:
 		unsigned long long tempadr2;
 		do
 		{
+		
+			//if (newhead == nullptr) 
+			//{
+			//	unsigned long long index = InterlockedIncrement(&logindex);
+			//	index %= MAX;
+			//	logbox[index].id = GetCurrentThreadId();
+			//	logbox[index].type = 0xdddddddd;
+			//	logbox[index].size = 0;
+			//	logbox[index].oldtail = (Node*)oldhead;
+			//	logbox[index].newtail = (Node*)newhead;
+			//	return false;
+			//}
+			do
+			{
 			oldhead = _head;
 			tempadr = (unsigned long long)oldhead;
 			tempadr <<= 16;
 			tempadr >>= 16;
 			realadr = (Node*)tempadr;
 			newhead = realadr->_next;
+			} while (newhead == nullptr);
 
-			if (newhead == nullptr) 
-			{
-				unsigned long long index = InterlockedIncrement(&logindex);
-				index %= MAX;
-				logbox[index].id = GetCurrentThreadId();
-				logbox[index].type = 0xdddddddd;
-				logbox[index].size = 0;
-				logbox[index].oldtail = (Node*)oldhead;
-				logbox[index].newtail = (Node*)newhead;
-				return false;
-			}
 
 			tempadr2 = (unsigned long long)newhead;
 			tempadr2 <<= 16;
@@ -136,11 +140,12 @@ public:
 private:
 	Node* _head;
 	Node* _tail;
-	MemoryPool<Node> _nodepool;
+	
 	
 	unsigned long _size=0;
 	short _key = 1;
-
+	public:
+	MemoryPool<Node> _nodepool;
 };
 
 

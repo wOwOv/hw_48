@@ -23,7 +23,8 @@ int main()
     }
     while (1)
     {
-    
+        printf("%d\n", lfQ._nodepool.GetCapacityCount());
+        Sleep(3000);
     }
 }
 
