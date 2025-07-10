@@ -15,8 +15,8 @@ unsigned __stdcall WorkerThread0(LPVOID arg);
 
 int main()
 {
-    HANDLE hThread[10];
-    for (int i = 0; i < 10; i++)
+    HANDLE hThread[4];
+    for (int i = 0; i < 4; i++)
     {
         hThread[i] = (HANDLE)_beginthreadex(NULL, 0, WorkerThread0, NULL, 0, NULL);
         printf("thread%d start\n", i);

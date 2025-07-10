@@ -42,7 +42,7 @@ public:
 	}
 	~LFQueue()
 	{
-		while (_head != nullptr)
+		while (_head->_next!= nullptr)
 		{
 			Node* next = _head->_next;
 			unsigned long long tempadr = (unsigned long long)_head;
@@ -74,6 +74,10 @@ public:
 		} while (InterlockedCompareExchange64((__int64*)&realadr->_next, (__int64)countnode, (__int64)nullptr) != (__int64)nullptr);
 		unsigned long qsize=InterlockedIncrement(&_size);
 		__int64 curtail=InterlockedCompareExchange64((__int64*)&_tail, (_int64)countnode, (__int64)oldtail);
+		if (curtail != (__int64)oldtail)
+		{
+			InterlockedCompareExchange64((__int64*)&_tail, (_int64)countnode, (__int64)_tail);
+		}
 		unsigned long long index = InterlockedIncrement(&logindex);
 		index %= MAX;
 		logbox[index].id = GetCurrentThreadId();
@@ -87,29 +91,27 @@ public:
 
 	bool Dequeue(DATA* data)
 	{
-		Node* oldhead;
-		Node* newhead;
-		Node* realadr;
+		Node* oldhead = nullptr;
+		Node* newhead=nullptr;
+		Node* realadr=nullptr;
 		unsigned long long tempadr;
 		unsigned long long tempadr2;
 		do
 		{
-			oldhead = _head;
-			tempadr = (unsigned long long)oldhead;
-			tempadr <<= 16;
-			tempadr >>= 16;
-			realadr = (Node*)tempadr;
-			newhead = realadr->_next;
-
-			if (newhead == nullptr) 
+			if (_size != 0)
 			{
-				unsigned long long index = InterlockedIncrement(&logindex);
-				index %= MAX;
-				logbox[index].id = GetCurrentThreadId();
-				logbox[index].type = 0xdddddddd;
-				logbox[index].size = 0;
-				logbox[index].oldtail = (Node*)oldhead;
-				logbox[index].newtail = (Node*)newhead;
+				do
+				{
+					oldhead = _head;
+					tempadr = (unsigned long long)oldhead;
+					tempadr <<= 16;
+					tempadr >>= 16;
+					realadr = (Node*)tempadr;
+					newhead = realadr->_next;
+				} while (newhead == nullptr);
+			}
+			else
+			{
 				return false;
 			}
 
@@ -139,8 +141,7 @@ private:
 	MemoryPool<Node> _nodepool;
 	
 	unsigned long _size=0;
-	short _key = 1;
-
+	short _key = 0;
 };
 
 
