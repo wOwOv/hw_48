@@ -6,7 +6,6 @@ datanode이(가) nullptr였습니다.>
 ㄴ이때 조사식으로 size확인하니 7이었음...그럼 예외 발생시키는 동안 다른 스레드들이 넣은건가...
 ㄴdatanode가 nullptr이었다는건...큐에 아무것도 없었다....
 A. 뽑아서 건네줄 노드가 nullptr이었다면 return false하기..
-_____________________________해결
 
 2.애초에 5개 인큐 후 5개 디큐하기에 디큐하려고할때 큐가 비어있을 수 없음
 그런데 디큐시에 false 리턴하는 경우가 생김
@@ -27,4 +26,20 @@ A.size 한번 확인해서 비어있던 게 아니라면 돌리자
 =>tail의 포인터를 비교하는게 아닌 tail의 next를 비교하는 것이다보니 tail 자체는 다르지만 연결 되는 경우가 있어서 발생하는 상황
 
 ㄴ노드들이 태그를 들고 있어서 생기는것이기도 하지 않나..?
+ㄴ원장님이 말씀하신대로 head만 tag를 갖도록 할까
+ㄴ원장님이 말씀하신대로 head만 tag를 갖도록 해도 head와 tail이 모두 더미노드를 가리킬 때 같은 상황이 발생할 수 있음.
+
+A?.연결은 성공했지만 저장하고 있던 oldtail과 현재 tail이 달라서 tail 변경을 실패했다면..그냥 나로 tail을 바꾸자
+		if (curtail != (__int64)oldtail)
+		{
+			InterlockedCompareExchange64((__int64*)&_tail, (_int64)countnode, (__int64)_tail);
+		}
+
+아니면 추가로 내 노드의 next가 nullptr인지 확인하고 바꿔주기..?
+
+3A.oldtail을 가져와서 next가 nullptr이 아니면 내가 oldtail의 next를 head로 바꾸고 다시 수행하자
+_____________________________________해결
+
+
+(4.디큐하는 스레드3개는 oldhead의 next가 null을 가리키고 있어서 빠져나오질 못하고 있음/인큐하는 스레드1개는 tail의 next가 null이 아니라서 빙글빙글 돌고 있음)
 
