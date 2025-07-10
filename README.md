@@ -39,7 +39,8 @@ A?.연결은 성공했지만 저장하고 있던 oldtail과 현재 tail이 달�
 
 아니면 추가로 내 노드의 next가 nullptr인지 확인하고 바꿔주기..?
 
+3A.oldtail을 가져와서 next가 nullptr이 아니면 내가 oldtail의 next를 head로 바꾸고 다시 수행하자
 
 
-4.디큐하는 스레드3개는 oldhead의 next가 null을 가리키고 있어서 빠져나오질 못하고 있음/인큐하는 스레드1개는 tail의 next가 null이 아니라서 빙글빙글 돌고 있음
+(4.디큐하는 스레드3개는 oldhead의 next가 null을 가리키고 있어서 빠져나오질 못하고 있음/인큐하는 스레드1개는 tail의 next가 null이 아니라서 빙글빙글 돌고 있음)
 
