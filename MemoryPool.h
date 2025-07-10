@@ -162,7 +162,7 @@ public:
 				allocated->_underguard = _cookie;
 				allocated->_overguard = _cookie;
 				realadr = allocated;
-				_capacity++;
+				InterlockedIncrement(&_capacity);
 				break;
 			}
 
@@ -180,7 +180,7 @@ public:
 		}
 
 
-		_usingCount++;
+		InterlockedIncrement(&_usingCount);
 
 		return &(allocated->_data);
 	}
@@ -222,7 +222,7 @@ public:
 		} while (InterlockedCompareExchange64((__int64*)&_head, (__int64)countnode, (__int64)oldhead) != (__int64)oldhead);
 
 
-		_usingCount--;
+		InterlockedDecrement(&_usingCount);
 		return true;
 	}
 
@@ -261,8 +261,8 @@ public:
 private:
 	NODE* _head;
 	int _cookie;
-	int _capacity;
-	int _usingCount;
+	unsigned int _capacity;
+	unsigned int _usingCount;
 	bool _pnFlag;
 
 	long long _position;
