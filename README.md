@@ -27,4 +27,20 @@ A.size 한번 확인해서 비어있던 게 아니라면 돌리자
 =>tail의 포인터를 비교하는게 아닌 tail의 next를 비교하는 것이다보니 tail 자체는 다르지만 연결 되는 경우가 있어서 발생하는 상황
 
 ㄴ노드들이 태그를 들고 있어서 생기는것이기도 하지 않나..?
+ㄴ원장님이 말씀하신대로 head만 tag를 갖도록 해도 head와 tail이 모두 더미노드를 가리킬 때 같은 상황이 발생할 수 있음.
 
+A.oldtail을 가져와서 next가 nullptr이 아니면 내가 oldtail의 next를 head로 바꾸고 다시 수행하자
+
+4.인큐하는 스레드3개가 tail의 next가 nullptr이 아니고 tail자기자신이라 빙글빙글돌고있음..
+ㄴ???? 스레드가 b8 db 11 2d 60 01 9e e7 이전 노드를 oldtail로 저장하고 ready
+->b8 db 11 2d 60 01 9e e7가 더이상 tail이 아니며 이후 디큐되어 메모리풀로 반환됨
+->이후 다른 스레드들이 쭉 돌다가 ????스레드가 다시 running되며 b8 db 11 2d 60 01 9e e7이전 노드의 next가 더이상 nullptr이 아님을 확인하고 oldtail의 next인 b8 db 11 2d 60 01 9e e7를 tail로 바꿈.
+->이때1c1c가 b8 db 11 2d 60 01 노드를 할당받고 nullptr로 세팅 후 oldtail의 next가 nullptr임을 보고 자신이 만든 b8 db 11 2d 60 01 9f e7 노드를 연결했음. 하지만 이 oldtail이 결국 자신이 할당 받았던 노드였기에 tail과 tail의 next가 모두 b8 db 11 2d 60 01를 가리키게됨
+(3번폴더 참조)
+
+디큐하러 오자마자 InterlockedDecrement(_size)의 리턴값 봐서 음수면 없는거고 0이상이면 있는거니까 0이상이면 뽑을 수 있을 때까지 빙글빙글 돌기
+
+태그 붙이려고 태그 InterlockedIncrement하는거 뺄 수 있도록하기
+ㄴ기존에 있는 태그를 뽑아서 그걸 플러스1
+
+비트시프트 말고 비트 마스크쓰기
