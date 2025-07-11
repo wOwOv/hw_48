@@ -3,7 +3,9 @@
 
 #include "MemoryPool.h"
 
-
+#define ADRMASK 0x0000ffffffffffff;
+#define TAGMASK 0xffff000000000000;
+#define MAKETAG 0x0001000000000000;
 
 #define MAX 5000000
 unsigned long long logindex = 0;
@@ -33,7 +35,7 @@ private:
 	};
 
 public:
-	LFQueue():_nodepool(0)
+	LFQueue() :_nodepool(0)
 	{
 		Node* dummy = _nodepool.Alloc();
 		dummy->_next = nullptr;
@@ -42,14 +44,14 @@ public:
 	}
 	~LFQueue()
 	{
-		while (_head != nullptr)
+		while (_head->_next != nullptr)
 		{
 			Node* next = _head->_next;
-			unsigned long long tempadr = (unsigned long long)_head;
-			tempadr <<= 16;
-			tempadr >>= 16;
-			Node* realadr = (Node*)tempadr;
-			delete realadr;
+			//unsigned long long tempadr = (unsigned long long)_head;
+			//tempadr <<= 16;
+			//tempadr >>= 16;
+			unsigned long long realadr = (unsigned long long)_head & ADRMASK;
+			delete (Node*)realadr;
 			_head = next;
 		}
 	}
@@ -58,22 +60,39 @@ public:
 		Node* newnode = _nodepool.Alloc();
 		newnode->_data = data;
 		newnode->_next = nullptr;
-		unsigned long long temp = InterlockedIncrement16(&_key);
 		unsigned long long countnode = (unsigned long long)newnode;
-		countnode |= (temp << 48);
 
 		Node* oldtail;
 		Node* realadr;
 		do
 		{
-			oldtail = _tail;
-			unsigned long long tempadr = (unsigned long long)oldtail;
-			tempadr <<= 16;
-			tempadr >>= 16;
-			realadr = (Node*)tempadr;
+			while (1)
+			{
+				oldtail = _tail;
+				unsigned long long tag = (unsigned long long) oldtail;
+
+				tag &= TAGMASK;
+				tag += MAKETAG;
+				countnode |= tag;
+
+				unsigned long long tempadr = (unsigned long long)oldtail;
+				tempadr &= ADRMASK;
+				realadr = (Node*)tempadr;
+
+				if (realadr->_next != nullptr)
+				{
+					InterlockedCompareExchange64((__int64*)&_tail, (__int64)realadr->_next, (__int64)oldtail);
+				}
+				else
+				{
+					break;
+				}
+			}
 		} while (InterlockedCompareExchange64((__int64*)&realadr->_next, (__int64)countnode, (__int64)nullptr) != (__int64)nullptr);
-		unsigned long qsize=InterlockedIncrement(&_size);
-		__int64 curtail=InterlockedCompareExchange64((__int64*)&_tail, (_int64)countnode, (__int64)oldtail);
+		unsigned long qsize = InterlockedIncrement(&_size);
+		__int64 curtail = InterlockedCompareExchange64((__int64*)&_tail, (_int64)countnode, (__int64)oldtail);
+
+
 		unsigned long long index = InterlockedIncrement(&logindex);
 		index %= MAX;
 		logbox[index].id = GetCurrentThreadId();
@@ -87,46 +106,45 @@ public:
 
 	bool Dequeue(DATA* data)
 	{
-		Node* oldhead;
-		Node* newhead;
-		Node* realadr;
+		Node* oldhead = nullptr;
+		Node* newhead = nullptr;
+		Node* realadr = nullptr;
 		unsigned long long tempadr;
 		unsigned long long tempadr2;
+
+		long qsize = InterlockedDecrement(&_size);
+		if (qsize < 0)
+		{
+			InterlockedIncrement(&_size);
+			return false;
+		}
+
 		do
 		{
-			oldhead = _head;
-			tempadr = (unsigned long long)oldhead;
-			tempadr <<= 16;
-			tempadr >>= 16;
-			realadr = (Node*)tempadr;
-			newhead = realadr->_next;
-
-			if (newhead == nullptr) 
+			do
 			{
-				unsigned long long index = InterlockedIncrement(&logindex);
-				index %= MAX;
-				logbox[index].id = GetCurrentThreadId();
-				logbox[index].type = 0xdddddddd;
-				logbox[index].size = 0;
-				logbox[index].oldtail = (Node*)oldhead;
-				logbox[index].newtail = (Node*)newhead;
-				return false;
-			}
+				oldhead = _head;
+				tempadr = (unsigned long long)oldhead;
+				tempadr &= ADRMASK;
+				realadr = (Node*)tempadr;
+				newhead = realadr->_next;
+			} while (newhead == nullptr);
 
 			tempadr2 = (unsigned long long)newhead;
-			tempadr2 <<= 16;
-			tempadr2 >>= 16;
+			tempadr2 &= ADRMASK;
 			Node* datanode = (Node*)tempadr2;
 			*data = datanode->_data;
-		} while (InterlockedCompareExchange64((__int64*)&_head,(__int64)newhead,(__int64)oldhead)!=(__int64)oldhead);
-		unsigned long qsize=InterlockedDecrement(&_size);
+		} while (InterlockedCompareExchange64((__int64*)&_head, (__int64)newhead, (__int64)oldhead) != (__int64)oldhead);
+
 
 		_nodepool.Free(realadr);
+
 		unsigned long long index = InterlockedIncrement(&logindex);
 		index %= MAX;
 		logbox[index].id = GetCurrentThreadId();
 		logbox[index].type = 0xdddddddd;
 		logbox[index].size = qsize;
+		logbox[index].curtail = 0x0000000000000000;
 		logbox[index].oldtail = (Node*)oldhead;
 		logbox[index].newtail = (Node*)newhead;
 		return true;
@@ -137,10 +155,8 @@ private:
 	Node* _head;
 	Node* _tail;
 	MemoryPool<Node> _nodepool;
-	
-	unsigned long _size=0;
-	short _key = 1;
 
+	long _size = 0;
 };
 
 
