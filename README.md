@@ -8,9 +8,9 @@ datanode이(가) nullptr였습니다.>
 A. 뽑아서 건네줄 노드가 nullptr이었다면 return false하기..
 _____________________________해결
 
+(Dequeue trouble shooting 폴더 참조)
 2.애초에 5개 인큐 후 5개 디큐하기에 디큐하려고할때 큐가 비어있을 수 없음
 그런데 디큐시에 false 리턴하는 경우가 생김
-(0번 폴더 참조)
 =>c8 12 44 dc 1e 02 71 53노드를 접근하여 이 노드의 next의 data를 뽑아가려고했음.
 하지만 그 사이 노드는 이미 다른 스레드가 뽑아가고 메모리풀로 반환되었고 다시 할당되어 tail로 들어가 next가 nullptr을 가리키고 있음.
 그래서 큐 사이즈가 0이 아닌데도 데이터 뽑으려는 노드의 next가 nullptr이라 없다고 생각하고 return false한 것..
@@ -19,9 +19,9 @@ A? nullptr인지 비교하는게 문제인가..
 그냥 nullptr이면 계속 될때까지 빙글빙글 돌리면 저 문제 안 나올 것 같은데..
 A.size 한번 확인해서 비어있던 게 아니라면 돌리자
 
+(Enqueue trouble shooting 폴더-2번 폴더 참조)
 3. 너무 잘 돌아가길래 중지 눌러보니까 모든 스레드가 인큐 함수 안에서 돌고있음
 모든 스레드가 인큐 행위를 못해서 못 벗어나고 있음
-(1번 폴더 참조)
 1.3810스레드가 tail을 c8 2f b0 06 94 01 e1 36로 저장해두고 퀀텀 내려갔음
 2.이후 d83b가 인큐하고 tail을 c8 2f b0 06 94 01 46 37로 변경함.
 3.3810이 다시 running되고 tail의 태그를 떼고 포인터의 next가 nullptr이라서 자신이 생성한 노드를 연결했음. 하지만 tail의 풀포인터를 비교하니 현재 포인터와는 달라서 tail을 바꿔주지는 않음
@@ -33,12 +33,17 @@ A.size 한번 확인해서 비어있던 게 아니라면 돌리자
 
 A.oldtail을 가져와서 next가 nullptr이 아니면 내가 oldtail의 next를 head로 바꾸고 다시 수행하자
 
+(next가 자기자신 폴더 -2번 폴더 참고)
 4.인큐하는 스레드3개가 tail의 next가 nullptr이 아니고 tail자기자신이라 빙글빙글돌고있음..
 ㄴ???? 스레드가 b8 db 11 2d 60 01 9e e7 이전 노드를 oldtail로 저장하고 ready
 ->b8 db 11 2d 60 01 9e e7가 더이상 tail이 아니며 이후 디큐되어 메모리풀로 반환됨
 ->이후 다른 스레드들이 쭉 돌다가 ????스레드가 다시 running되며 b8 db 11 2d 60 01 9e e7이전 노드의 next가 더이상 nullptr이 아님을 확인하고 oldtail의 next인 b8 db 11 2d 60 01 9e e7를 tail로 바꿈.
 ->이때1c1c가 b8 db 11 2d 60 01 노드를 할당받고 nullptr로 세팅 후 oldtail의 next가 nullptr임을 보고 자신이 만든 b8 db 11 2d 60 01 9f e7 노드를 연결했음. 하지만 이 oldtail이 결국 자신이 할당 받았던 노드였기에 tail과 tail의 next가 모두 b8 db 11 2d 60 01를 가리키게됨
-(3번폴더 참조)
+
+
+
+
+
 
 디큐하러 오자마자 InterlockedDecrement(_size)의 리턴값 봐서 음수면 없는거고 0이상이면 있는거니까 0이상이면 뽑을 수 있을 때까지 빙글빙글 돌기
 
