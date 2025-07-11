@@ -41,13 +41,15 @@ A.oldtail을 가져와서 next가 nullptr이 아니면 내가 oldtail의 next를
 ->이때1c1c가 b8 db 11 2d 60 01 노드를 할당받고 nullptr로 세팅 후 oldtail의 next가 nullptr임을 보고 자신이 만든 b8 db 11 2d 60 01 9f e7 노드를 연결했음. 하지만 이 oldtail이 결국 자신이 할당 받았던 노드였기에 tail과 tail의 next가 모두 b8 db 11 2d 60 01를 가리키게됨
 
 
+******************4번은 아직 해결 못함...
 
 
-
-
+해결
+{
 디큐하러 오자마자 InterlockedDecrement(_size)의 리턴값 봐서 음수면 없는거고 0이상이면 있는거니까 0이상이면 뽑을 수 있을 때까지 빙글빙글 돌기
 
 태그 붙이려고 태그 InterlockedIncrement하는거 뺄 수 있도록하기
 ㄴ기존에 있는 태그를 뽑아서 그걸 플러스1
 
 비트시프트 말고 비트 마스크쓰기
+}
