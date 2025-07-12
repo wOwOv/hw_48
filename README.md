@@ -40,14 +40,16 @@ A.oldtail을 가져와서 next가 nullptr이 아니면 내가 oldtail의 next를
 ->이후 다른 스레드들이 쭉 돌다가 ????스레드가 다시 running되며 b8 db 11 2d 60 01 9e e7이전 노드의 next가 더이상 nullptr이 아님을 확인하고 oldtail의 next인 b8 db 11 2d 60 01 9e e7를 tail로 바꿈.
 ->이때1c1c가 b8 db 11 2d 60 01 노드를 할당받고 nullptr로 세팅 후 oldtail의 next가 nullptr임을 보고 자신이 만든 b8 db 11 2d 60 01 9f e7 노드를 연결했음. 하지만 이 oldtail이 결국 자신이 할당 받았던 노드였기에 tail과 tail의 next가 모두 b8 db 11 2d 60 01를 가리키게됨
 
+5. 4를 해결하기 위해 할당받은 노드와 tail이 같다면 할당받은 노드의 next를 nullptr로 미는 행위를 하지 않고 둠. 반복문을 나갈 수 있는 상황이 되면 nullptr 대입하기
+=>size를 분명 빼갈 수 있는 사이즈로 봤는데 실제로 들어가면 노드가 없어서 디큐 안에 갇혀있음
 
 
-
-
-
+해결
+{
 디큐하러 오자마자 InterlockedDecrement(_size)의 리턴값 봐서 음수면 없는거고 0이상이면 있는거니까 0이상이면 뽑을 수 있을 때까지 빙글빙글 돌기
 
 태그 붙이려고 태그 InterlockedIncrement하는거 뺄 수 있도록하기
 ㄴ기존에 있는 태그를 뽑아서 그걸 플러스1
 
 비트시프트 말고 비트 마스크쓰기
+}
